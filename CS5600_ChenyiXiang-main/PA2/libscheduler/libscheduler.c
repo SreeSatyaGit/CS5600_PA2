@@ -84,7 +84,17 @@ job_t *determine_next_job_to_run()
     {
     case FCFS:
     {
-        selected_job = job_queue_head;
+        while (temp != NULL)
+        {
+            if (temp->state == JOB_WAITING)
+            {
+                selected_job = temp;
+                prev_selected = prev_temp;
+            }
+            prev_temp = temp;
+            temp = temp->next;
+        }
+        
         break;
     }
 
@@ -96,6 +106,7 @@ job_t *determine_next_job_to_run()
             if (temp->time_left < shortest_time && temp->state == JOB_WAITING)
             {
                 shortest_time = temp->time_left;
+                printf(" job num -> %d\n",temp->job_number);
                 selected_job = temp;
                 prev_selected = prev_temp;
             }
