@@ -27,7 +27,124 @@ int scheduler_new_job(int job_number, int time, int running_time, int priority) 
             while (current->next != NULL) current = current->next;
             current->next = new_node;
         }
-    } else { /* Insertion logic for SJF, PSJF, PRI, PPRI */ }
+    } 
+
+    else if (scheme == SJF) {
+		// Insert the new job in sorted order based on running time
+        // Special handling for inserting immediately after the head
+		if (head->next != NULL) {
+			if (new_node->running_time < head->next->running_time) { 
+					new_node->next = head->next;
+					head->next = new_node;
+					return head->job_number;
+			}
+			else {
+				// Find the correct position for the new job
+				job_node_t* current = head->next;
+				job_node_t* prev = head; 
+				while (current != NULL && current->running_time <= new_node->running_time) {
+					prev = current; 
+					current = current->next;
+				}
+				new_node->next = current;
+				prev->next = new_node;
+				return head->job_number;
+			}
+		}
+		// If the head is the only node, simply add the new node after it
+		head->next = new_node;
+		return head->job_number;
+	}
+
+	// For Preemptive Shortest Job First (PSJF) scheduling
+	else if (scheme == PSJF) {
+		// Adjust the remaining time of the current head job
+        if (head != NULL) {
+            head->remaining_time -= (time - head->start_time);
+        }
+
+		// Insert the new job based on remaining running time
+		job_node_t* current = head;
+		job_node_t* prev = NULL;
+		
+		while (current!= NULL && current->remaining_time <= new_node->running_time){
+			prev = current;
+			current = current->next;
+		}
+		
+		new_node->next = current;
+		
+		if (prev != NULL){
+			prev->next = new_node;
+		}
+		else{
+			// Handle the case where the new job becomes the head
+			if(new_node->first_run_time == -1){
+				new_node->first_run_time = time;
+			}
+			// Adjust the first run time of the next job, if necessary
+			if(new_node->first_run_time == new_node->next->first_run_time){
+				new_node->next->first_run_time = -1;
+			} 
+			head = new_node;
+		}
+		return head->job_number;
+	}
+
+	else if (scheme == PRI) {
+		if (head->next != NULL) {
+			if (new_node->priority <= head->next->priority) { 
+				new_node->next = head->next;
+				head->next = new_node;
+				return head->job_number;
+			}
+			else {
+				job_node_t* current = head->next;
+				job_node_t* prev = head; 
+				while (current != NULL && current->priority <= new_node->priority) {
+					prev = current; 
+					current = current->next;
+				}
+				new_node->next = current;
+				prev->next = new_node;
+				return head->job_number;
+			}
+		}
+		head->next = new_node;
+		return head->job_number;
+	}
+
+	 // For Preemptive Priority (PPRI) scheduling
+	else if (scheme == PPRI) {
+		job_node_t* current = head;
+        job_node_t* prev = NULL;
+        while (current != NULL && current->priority <= new_node->priority) {
+            prev = current;
+            current = current->next;
+        }
+        new_node->next = current;
+        if (prev != NULL){
+            prev->next = new_node;
+		} else{
+			// Handle the case where the new job becomes the head
+			if(new_node->first_run_time == -1){
+				new_node->first_run_time = time;
+			}
+			 // Adjust the first run time of the next job, if necessary
+			if(new_node->first_run_time == new_node->next->first_run_time){
+				new_node->next->first_run_time = -1;
+			} 
+			head = new_node;
+		}
+		return head->job_number;
+	}
+	
+
+
+
+    else { fprintf(stderr, "Unknown scheduling algorithm\n");
+		free(new_node);
+		return -1; }
     return head ? head->job_number : -1;
 }
 
